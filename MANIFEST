@@ -1,0 +1,7 @@
+Changes
+lib/Widget/Handsontable.pm
+lib/Widget/Handsontable/Row.pm
+Makefile.PL
+MANIFEST
+README
+t/Widget-Handsontable.t

@@ -1,0 +1,6 @@
+Revision history for Perl extension Widget::Handsontable.
+
+0.01  Mon Jan 19 14:00:54 2015
+	- original version; created by h2xs 1.23 with options
+		-AX -b 5.8.0 -n Widget::Handsontable
+
