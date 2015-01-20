@@ -32,23 +32,149 @@ Blah blah blah.
 
 Constructor
 
+See https://github.com/handsontable/handsontable/wiki/Options for args
+
 =cut
 
-my $supported_constructor_args = { 
-            columnSorting => { is_bool => 1 },
-            autoColumnSize => { is_bool => 1 },
-            fixedColumnsLeft => { is_bool => 1 },
-            id => {} 
-        };
+my $supported_constructor_args = { autoColumnSize => { is_bool => 1 },
+                                   autoComplete   => {
+                                                     not_supported => 1,
+                                                     message       => 'autoComplete is not supported'
+                                                   },
+                                   autoWrapCol => { is_bool => 1 },
+                                   autoWrapRow => { is_bool => 1 },
+                                   cells       => {
+                                              not_supported => 1,
+                                              message       => 'cells is not supported'
+                                            },
+                                   className  => { is_string => 1 },
+                                   colHeaders => {
+                                          not_supported => 1,
+                                          message => 'colHeaders is generated from the column definitions automatically'
+                                   },
+                                   colWidths => { is_array  => 1,
+                                                  is_string => 1
+                                                },
+                                   columnSorting => { is_bool => 1 },
+                                   columns       => {
+                                             not_supported => 1,
+                                             message => 'columns is generated from the column definitions automatically'
+                                   },
+                                   contextMenu => { is_array => 1,
+                                                    is_bool  => 1
+                                                  },
+                                   copyColsLimit       => { is_string => 1 },
+                                   copyPaste           => { is_bool   => 1 },
+                                   copyRowsLimit       => { is_string => 1 },
+                                   currentColClassName => { is_string => 1 },
+                                   currentRowClassName => { is_string => 1 },
+                                   customBorders       => { is_bool   => 1 },
+                                   data                => {
+                                             not_supported => 1,
+                                             message       => 'data is generated from the data automatically'
+                                           },
+                                   dataSchema => { not_supported => 1,
+                                                   message       => 'dataSchema is not supported'
+                                                 },
+                                   debug              => { is_bool => 1 },
+                                   enterBeginsEditing => { is_bool => 1 },
+                                   enterMoves         => {
+                                                   not_supported => 1,
+                                                   message       => 'enterMoves is not supported'
+                                                 },
+                                   fillHandle => { is_bool   => 1,
+                                                   is_string => 1
+                                                 },
+                                   fixedColumnsLeft  => { is_string => 1 },
+                                   fixedRowsTop      => { is_string => 1 },
+                                   fragmentSelection => { is_bool   => 1 },
+                                   groups            => {
+                                               is_bool  => 1,
+                                               is_array => 1
+                                             },
+                                   height => { is_string => 1 },
+                                   id     => { is_string => 1 }, 
+                                   invalidCellClassName => { is_string => 1 },
+                                   isEmptyCol => { not_supported => 1,
+                                                   message       => 'isEmptyCol is not supported'
+                                                 },
+                                   isEmptyRow => { not_supported => 1,
+                                                   message       => 'isEmptyRow is not supported'
+                                                 },
+                                   manualColumnMove => { not_supported => 1,
+                                                         message       => 'manualColumnMove is not supported'
+                                                       },
+                                   manualColumnResize => { is_bool  => 1,
+                                                           is_array => 1
+                                                         },
+                                   manualRowMove => { not_supported => 1,
+                                                      message       => 'manualRowMove is not supported'
+                                                    },
+                                   manualRowResize => { is_bool  => 1,
+                                                        is_array => 1
+                                                      },
+                                   maxCols    => { is_string => 1 },
+                                   maxRows    => { is_string => 1 },
+                                   mergeCells => { not_supported => 1,
+                                                   message       => 'mergeCells is not supported'
+                                                 },
+                                   minCols             => { is_string => 1 },
+                                   minRows             => { is_string => 1 },
+                                   minSpareCols        => { is_string => 1 },
+                                   minSpareRows        => { is_string => 1 },
+                                   multiSelect         => { is_bool   => 1 },
+                                   noWordWrapClassName => { is_string => 1 },
+                                   observeChanges      => {
+                                                       not_supported => 1,
+                                                       message       => 'observeChanges is not supported'
+                                                     },
+                                   observeDOMVisibility  => { is_bool   => 1 },
+                                   outsideClickDeselects => { is_bool   => 1 },
+                                   pasteMode             => { is_string => 1 },
+                                   persistantState       => {
+                                                        not_supported => 1,
+                                                        message       => 'persistantState is not supported'
+                                                      },
+                                   placeholder              => { is_string => 1 },
+                                   placeholderCellClassName => { is_string => 1 },
+                                   readOnlyCellClassName    => { is_string => 1 },
+                                   rowHeaders               => {
+                                                   is_bool  => 1,
+                                                   is_array => 1
+                                                 },
+                                   search    => { is_bool   => 1 },
+                                   startCols => { is_string => 1 },
+                                   startRows => { is_string => 1 },
+                                   stretchH  => { is_string => 1 },
+                                   tabMove   => {
+                                                not_supported => 1,
+                                                message       => 'tabMove is not supported'
+                                              },
+                                   undo     => { is_bool   => 1 },
+                                   width    => { is_string => 1 },
+                                   wordWrap => { is_bool   => 1 }, };
 
-sub new 
+my $supported_column_args = {
+                    allowInvalid => { is_bool => 1 },
+                    copyable => { is_bool => 1 },
+                    editor => { is_string => 1 },
+                    format => { is_string => 1 },
+                    header => { local => 1, required => 1 },
+                    name => { local => 1, required => 1 },
+                    type => { is_string => 1 },
+                    readOnly => { is_bool => 1 },
+                    renderer => { is_string => 1 },
+                    validator => { not_supported => 1, message => 'validator is not supported' },
+                     };
+                    
+sub new
 {
-    my ($class, %args) = @_;
-    my $columns = delete($args{columns});
-    my $self = {};
-    $self->{__constructor_args} = { %args };
-    $self->{__rows} = [];
-    bless ($self, $class);
+    my ( $class, %args ) = @_;
+    my $columns = delete( $args{columns} );
+    my $self    = {};
+    $self->{__constructor_args} = {%args};
+    $self->{__rows}             = [];
+    bless( $self, $class );
     $self->__initialize_columns($columns);
     return $self;
 }
@@ -57,15 +183,15 @@ sub new
 
 =cut
 
-sub addrow 
+sub addrow
 {
-    my ($self, %args) = @_;
+    my ( $self, %args ) = @_;
     my $new_row = Widget::Handsontable::Row->__new( $self->{__columns} );
-    while (my ($name, $data) = each(%args) )
+    while ( my ( $name, $data ) = each(%args) )
     {
         $new_row->$name($data);
     }
-    push (@{$self->{__rows}},$new_row);
+    push( @{ $self->{__rows} }, $new_row );
     return $new_row;
 }
 
@@ -73,9 +199,9 @@ sub addrow
 
 =cut
 
-sub rows 
+sub rows
 {
-    my ($self, %args) = @_;
+    my ( $self, %args ) = @_;
     return $self->{__rows};
 }
 
@@ -83,37 +209,35 @@ sub rows
 
 =cut
 
-sub serialize 
+sub serialize
 {
-    my ($self, %args) = @_;
+    my ( $self, %args ) = @_;
+
     # array serialization
     my $struct = {};
     my @data;
     my @headers;
 
-    foreach my $column (@{$self->{__columns}})
+    foreach my $column ( @{ $self->{__columns} } )
     {
-        push(@headers,$column->{header});
+        push( @headers, $column->{header} );
     }
     $struct->{colHeaders} = \@headers;
 
-    foreach my $row (@{$self->{__rows}})
+    foreach my $row ( @{ $self->{__rows} } )
     {
-        push(@data, $row->serialize);
+        push( @data, $row->serialize );
     }
     $struct->{data} = \@data;
 
-    while (my ($arg,$conf) = each($supported_constructor_args))
+    while ( my ( $arg, $conf ) = each($supported_constructor_args) )
     {
-        if (exists($self->{__constructor_args}->{$arg}))
+        if ( exists( $self->{__constructor_args}->{$arg} ) )
         {
-            if ($conf->{is_bool})
-            {
-                $struct->{$arg} = $self->{__constructor_args}->{$arg} ? JSON::true : JSON::false;
-            }
+            $struct->{$arg} = $self->__arg_test($arg, $conf, $self->{__constructor_args}->{$arg});
         }
     }
-    
+
     return $struct;
 }
 
@@ -121,21 +245,83 @@ sub serialize
 
 =cut
 
-sub serialize_as_json 
+sub serialize_as_json
 {
-    my ($self, %args) = @_;
-    return to_json($self->serialize(%args));
+    my ( $self, %args ) = @_;
+    return to_json( $self->serialize(%args) );
 }
 
 # INTERNAL METHODS
-# may not need this eventually, not sure yet
 
-sub __initialize_columns 
+sub __initialize_columns
 {
-    my ($self, $columns) = @_;
+    my ( $self, $columns ) = @_;
+    foreach my $col (@$columns)
+    {
+        while (my($arg,$rules) = each (%$supported_column_args))
+        {
+            # die if the column isnt legit
+            if (exists($col->{$arg}))
+            {
+                warn "column arg test";
+                $self->__arg_test($arg, $rules, $col->{$arg});
+            }
+        }
+    }
+
     $self->{__columns} = $columns;
     return;
 }
+
+sub __arg_test
+{
+    my ($self, $arg, $rules, $value) = @_;
+    warn "testing $arg valued passed $value";
+    # die on not supported 
+    if ( $rules->{not_supported} )
+    {
+        die( $rules->{message} );
+    }
+
+    # could be a Constructor arg ($self->{__constructor_args}->{$arg}) OR a column arg $column->{$arg}
+    if (($rules->{required}) && (!defined($value)))
+    {
+        die( "Missing required argument: $arg" );
+    }
+
+    return if ($rules->{local});
+
+    # there might eventually be an issue with string 1 (for numbers) vs bool 1 (for true)                                                                                           
+    # will solve it once i see it
+    if ( ( $rules->{is_string} ) && ( defined( $value ) ) && ( !ref($value))  )
+    {
+        return $value;
+    }
+    elsif ( ( $rules->{is_array} ) && ( ref( $value ) eq 'ARRAY' ) )
+    {
+        return $value;
+    }
+    elsif ( ( $rules->{is_bool} ) && ( JSON::is_bool( $value ) ) )
+    {
+        return $value;
+    }
+    elsif ( ( $rules->{is_bool} ) && ( ($value == 1) || ($value == 0) ) ) 
+    {
+        return $value ? JSON::true : JSON::false;
+    }
+    else
+    {
+        my $possible;
+        while ( my ( $k, $v ) = each(%$rules) )
+        {
+            $possible .= $k =~ s/^is_// if ( $k =~ /^is_/ ) . ', ';
+        }
+        $possible =~ s/\,\s+$//;
+        die("Invalid option data value.  $arg supports $possible");
+    }
+
+    return;
+}  
 
 =head1 SEE ALSO
 
