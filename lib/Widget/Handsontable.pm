@@ -92,10 +92,11 @@ my $supported_constructor_args = { autoColumnSize => { is_bool => 1 },
                                                is_bool  => 1,
                                                is_array => 1
                                              },
-                                   height => { is_string => 1 },
-                                   id     => { is_string => 1 }, 
+                                   height               => { is_string => 1 },
+                                   id                   => { is_string => 1 },
                                    invalidCellClassName => { is_string => 1 },
-                                   isEmptyCol => { not_supported => 1,
+                                   isEmptyCol           => {
+                                                   not_supported => 1,
                                                    message       => 'isEmptyCol is not supported'
                                                  },
                                    isEmptyRow => { not_supported => 1,
@@ -154,19 +155,26 @@ my $supported_constructor_args = { autoColumnSize => { is_bool => 1 },
                                    width    => { is_string => 1 },
                                    wordWrap => { is_bool   => 1 }, };
 
-my $supported_column_args = {
-                    allowInvalid => { is_bool => 1 },
-                    copyable => { is_bool => 1 },
-                    editor => { is_string => 1 },
-                    format => { is_string => 1 },
-                    header => { local => 1, required => 1 },
-                    name => { local => 1, required => 1 },
-                    type => { is_string => 1 },
-                    readOnly => { is_bool => 1 },
-                    renderer => { is_string => 1 },
-                    validator => { not_supported => 1, message => 'validator is not supported' },
-                     };
-                    
+my $supported_column_args = { allowInvalid => { is_bool   => 1 },
+                              copyable     => { is_bool   => 1 },
+                              editor       => { is_string => 1 },
+                              format       => { is_string => 1 },
+                              header       => {
+                                          local    => 1,
+                                          required => 1
+                                        },
+                              hidden => { local => 1 },
+                              name   => {
+                                        local    => 1,
+                                        required => 1
+                                      },
+                              type      => { is_string => 1 },
+                              readOnly  => { is_bool   => 1 },
+                              renderer  => { is_string => 1 },
+                              validator => { not_supported => 1,
+                                             message       => 'validator is not supported'
+                                           }, };
+
 sub new
 {
     my ( $class, %args ) = @_;
@@ -174,6 +182,7 @@ sub new
     my $self    = {};
     $self->{__constructor_args} = {%args};
     $self->{__rows}             = [];
+    $self->{__row_counter}      = 0;
     bless( $self, $class );
     $self->__initialize_columns($columns);
     return $self;
@@ -186,12 +195,14 @@ sub new
 sub addrow
 {
     my ( $self, %args ) = @_;
-    my $new_row = Widget::Handsontable::Row->__new( $self->{__columns} );
+
+    my $new_row = Widget::Handsontable::Row->__new( $self->{__columns}, $self->{__row_counter} );
     while ( my ( $name, $data ) = each(%args) )
     {
         $new_row->$name($data);
     }
     push( @{ $self->{__rows} }, $new_row );
+    $self->{__row_counter}++;
     return $new_row;
 }
 
@@ -217,10 +228,28 @@ sub serialize
     my $struct = {};
     my @data;
     my @headers;
+    my @columns;
 
     foreach my $column ( @{ $self->{__columns} } )
     {
-        push( @headers, $column->{header} );
+        if ( !$column->{hidden} )
+        {
+            my $colref = { data => $column->{name} };
+            while ( my ( $arg, $conf ) = each(%$supported_column_args) )
+            {
+                if ( exists( $column->{$arg} ) && ( !$conf->{local} ) )
+                {
+                    $colref->{$arg} = $column->{$arg};
+                }
+            }
+            push( @columns, $colref );
+        }
+    }
+    $struct->{columns} = \@columns;
+
+    foreach my $column ( @{ $self->{__columns} } )
+    {
+        push( @headers, $column->{header} ) if !$column->{hidden};
     }
     $struct->{colHeaders} = \@headers;
 
@@ -230,11 +259,11 @@ sub serialize
     }
     $struct->{data} = \@data;
 
-    while ( my ( $arg, $conf ) = each($supported_constructor_args) )
+    while ( my ( $arg, $conf ) = each(%$supported_constructor_args) )
     {
         if ( exists( $self->{__constructor_args}->{$arg} ) )
         {
-            $struct->{$arg} = $self->__arg_test($arg, $conf, $self->{__constructor_args}->{$arg});
+            $struct->{$arg} = $self->__arg_test( $arg, $conf, $self->{__constructor_args}->{$arg} );
         }
     }
 
@@ -251,6 +280,44 @@ sub serialize_as_json
     return to_json( $self->serialize(%args) );
 }
 
+=head2 load_from_json
+
+=cut
+
+sub load_from_json
+{
+    my ( $self, $json, %args ) = @_;
+
+    # ok, we have the inflated table, so iterate the rows and set the values
+    my $data = from_json($json);
+    my @sorted = sort { $a->{__row_number} <=> $b->{__row_number} } @$data;
+
+    # we can now iterate through the internal rows and synchronize
+
+    foreach my $incoming_row (@sorted)
+    {
+        my $original_row_number = delete( $incoming_row->{__row_number} );
+        my $row_record          = @{ $self->{__rows} }[$original_row_number];
+
+        # its possible that this is a "new" row, so ill add one if we have to
+        if ( !$row_record )
+        {
+            $self->addrow(%$incoming_row);
+        }
+
+        # this was there, so lets overwrite it
+        else
+        {
+            while ( my ( $k, $v ) = each(%$incoming_row) )
+            {
+                $row_record->$k($v);
+            }
+        }
+    }
+
+    return;
+}
+
 # INTERNAL METHODS
 
 sub __initialize_columns
@@ -258,13 +325,12 @@ sub __initialize_columns
     my ( $self, $columns ) = @_;
     foreach my $col (@$columns)
     {
-        while (my($arg,$rules) = each (%$supported_column_args))
+        while ( my ( $arg, $rules ) = each(%$supported_column_args) )
         {
             # die if the column isnt legit
-            if (exists($col->{$arg}))
+            if ( exists( $col->{$arg} ) )
             {
-                warn "column arg test";
-                $self->__arg_test($arg, $rules, $col->{$arg});
+                $col->{$arg} = $self->__arg_test( $arg, $rules, $col->{$arg} );
             }
         }
     }
@@ -275,37 +341,37 @@ sub __initialize_columns
 
 sub __arg_test
 {
-    my ($self, $arg, $rules, $value) = @_;
-    warn "testing $arg valued passed $value";
-    # die on not supported 
+    my ( $self, $arg, $rules, $value ) = @_;
+
+    # die on not supported
     if ( $rules->{not_supported} )
     {
         die( $rules->{message} );
     }
 
     # could be a Constructor arg ($self->{__constructor_args}->{$arg}) OR a column arg $column->{$arg}
-    if (($rules->{required}) && (!defined($value)))
+    if ( ( $rules->{required} ) && ( !defined($value) ) )
     {
-        die( "Missing required argument: $arg" );
+        die("Missing required argument: $arg");
     }
 
-    return if ($rules->{local});
+    return $value if ( $rules->{local} );
 
-    # there might eventually be an issue with string 1 (for numbers) vs bool 1 (for true)                                                                                           
+    # there might eventually be an issue with string 1 (for numbers) vs bool 1 (for true)
     # will solve it once i see it
-    if ( ( $rules->{is_string} ) && ( defined( $value ) ) && ( !ref($value))  )
+    if ( ( $rules->{is_string} ) && ( defined($value) ) && ( !ref($value) ) )
     {
         return $value;
     }
-    elsif ( ( $rules->{is_array} ) && ( ref( $value ) eq 'ARRAY' ) )
+    elsif ( ( $rules->{is_array} ) && ( ref($value) eq 'ARRAY' ) )
     {
         return $value;
     }
-    elsif ( ( $rules->{is_bool} ) && ( JSON::is_bool( $value ) ) )
+    elsif ( ( $rules->{is_bool} ) && ( JSON::is_bool($value) ) )
     {
         return $value;
     }
-    elsif ( ( $rules->{is_bool} ) && ( ($value == 1) || ($value == 0) ) ) 
+    elsif ( ( $rules->{is_bool} ) && ( ( $value == 1 ) || ( $value == 0 ) ) )
     {
         return $value ? JSON::true : JSON::false;
     }
@@ -321,7 +387,7 @@ sub __arg_test
     }
 
     return;
-}  
+}
 
 =head1 SEE ALSO
 
